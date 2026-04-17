@@ -269,6 +269,8 @@ export default function App() {
     if (key !== 'video') setVideoSeconds(4);
   };
 
+  const videoReadyAt = useRef(0);
+
   const pollVideo = async (videoId) => {
     updateLastMsg({ result: 'Ta vidéo est en cours de création...', url: null, status: 'waiting' });
     for (let i = 0; i < 40; i++) {
@@ -278,6 +280,7 @@ export default function App() {
       if (pollData.status === 'completed') {
         const contentRes = await fetch(apiUrl(`v1/videos/${videoId}/content`), { headers: { 'Authorization': `Bearer ${API_KEY}` } });
         const contentData = await contentRes.json();
+        videoReadyAt.current = Date.now();
         updateLastMsg(contentData.url
           ? { result: 'Vidéo prête !', url: contentData.url, status: 'done' }
           : { result: 'La vidéo est prête mais le lien est introuvable. Réessaie.', url: null, status: 'done' }
@@ -285,10 +288,12 @@ export default function App() {
         return;
       }
       if (pollData.error) {
+        videoReadyAt.current = Date.now();
         updateLastMsg({ result: 'La génération a échoué côté serveur. Réessaie dans quelques instants.', url: null, status: 'done' });
         return;
       }
     }
+    videoReadyAt.current = Date.now();
     updateLastMsg({ result: 'La génération prend trop de temps. Réessaie avec un prompt plus court.', url: null, status: 'done' });
   };
 
@@ -325,39 +330,31 @@ export default function App() {
 
       } else if (tab === 'video') {
         videoGenerating.current = true;
+        const elapsed = Date.now() - videoReadyAt.current;
+        if (elapsed < 15000) {
+          await new Promise(r => setTimeout(r, 15000 - elapsed));
+        }
         const bodyObject = { prompt, seconds: videoSeconds };
-        const res = await fetch(apiUrl('v1/videos/generations'), {
-          method: 'POST',
-          headers: { 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(bodyObject),
-        });
-        const data = await res.json();
-
-        if (data.id) {
+        let data = null;
+        for (let attempt = 0; attempt <= 6; attempt++) {
+          if (attempt > 0) {
+            updateLastMsg({ result: `Le serveur est occupé, nouvelle tentative dans 30s... (${attempt}/6)`, url: null, status: 'waiting' });
+            await new Promise(r => setTimeout(r, 30000));
+          }
+          const res = await fetch(apiUrl('v1/videos/generations'), {
+            method: 'POST',
+            headers: { 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
+            body: JSON.stringify(bodyObject),
+          });
+          data = await res.json();
+          if (data.id) break;
+          const msgErr = data.error?.message || '';
+          if (!msgErr.toLowerCase().includes('already have a video generation in progress')) break;
+        }
+        if (data?.id) {
           await pollVideo(data.id);
         } else {
-          const msgErr = data.error?.message || '';
-          if (msgErr.toLowerCase().includes('already have a video generation in progress')) {
-            let retryData = null;
-            for (let i = 1; i <= 6; i++) {
-              updateLastMsg({ result: `Le serveur est occupé, nouvelle tentative dans 30s... (${i}/6)`, url: null, status: 'waiting' });
-              await new Promise(r => setTimeout(r, 30000));
-              const retryRes = await fetch(apiUrl('v1/videos/generations'), {
-                method: 'POST',
-                headers: { 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
-                body: JSON.stringify(bodyObject),
-              });
-              retryData = await retryRes.json();
-              if (retryData.id) break;
-            }
-            if (retryData?.id) {
-              await pollVideo(retryData.id);
-            } else {
-              updateLastMsg({ result: 'Le serveur est toujours occupé. Attends quelques minutes puis réessaie.', url: null, status: 'done' });
-            }
-          } else {
-            updateLastMsg({ result: 'La génération a échoué. Vérifie ta description et réessaie.', url: null, status: 'done' });
-          }
+          updateLastMsg({ result: 'Le serveur est toujours occupé. Attends quelques minutes puis réessaie.', url: null, status: 'done' });
         }
       }
     } catch (e) {
