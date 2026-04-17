@@ -36,11 +36,16 @@ const ImageCard = ({ url }) => {
   if (!url) return null;
   const download = async () => {
     if (Platform.OS === 'web') {
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = 'bentry-image.png';
-      a.target = '_blank';
-      a.click();
+      try {
+        const res = await fetch(url);
+        const blob = await res.blob();
+        const blobUrl = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = blobUrl;
+        a.download = 'bentry-image.png';
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(blobUrl), 1000);
+      } catch { Linking.openURL(url); }
     } else {
       const { status } = await MediaLibrary.requestPermissionsAsync();
       if (status !== 'granted') { Alert.alert('Permission refusée'); return; }
