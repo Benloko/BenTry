@@ -372,8 +372,8 @@ export default function App() {
       } else if (tab === 'video') {
         videoGenerating.current = true;
         const elapsed = Date.now() - videoReadyAt.current;
-        if (elapsed < 3000) {
-          await new Promise(r => setTimeout(r, 3000 - elapsed));
+        if (elapsed < 10000) {
+          await new Promise(r => setTimeout(r, 10000 - elapsed));
         }
         const bodyObject = { prompt, seconds: videoSeconds };
         let data = null;
