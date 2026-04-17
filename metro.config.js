@@ -1,7 +1,7 @@
 const { getDefaultConfig } = require('expo/metro-config');
 const https = require('https');
 
-const API_KEY = 'sk-afri-13e1185b7e9d4409b4383864bbb15cdd';
+const API_KEY = 'sk-afri-6916366db31947fea93ec8218bb600a1';
 
 function httpsRequest(options, payload) {
   return new Promise((resolve, reject) => {
