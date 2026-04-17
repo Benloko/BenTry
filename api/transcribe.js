@@ -55,7 +55,7 @@ module.exports = async function handler(req, res) {
 
   try {
     const audioBuffer = Buffer.concat(chunks);
-    const contentType = req.headers['content-type'] || 'audio/webm';
+    const contentType = req.headers['x-audio-type'] || req.headers['content-type'] || 'audio/ogg';
     const ext = contentType.includes('mp4') ? 'mp4' : contentType.includes('ogg') ? 'ogg' : 'webm';
 
     const audioUrl = await uploadToTmpfiles(audioBuffer, contentType, ext);

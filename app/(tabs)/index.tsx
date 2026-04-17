@@ -122,9 +122,9 @@ const VocalTab = () => {
       console.log('Blob size:', blob.size, 'type:', blob.type, 'PROXY:', PROXY);
 
       // 1. ASR via proxy Metro
-      const asrRes = await fetch(`${PROXY}/transcribe`, {
+      const asrRes = await fetch(`${PROXY}/api/transcribe`, {
         method: 'POST',
-        headers: { 'Content-Type': blob.type },
+        headers: { 'Content-Type': 'application/octet-stream', 'X-Audio-Type': blob.type },
         body: blob,
       });
       const asrRaw = await asrRes.text();
@@ -150,7 +150,7 @@ const VocalTab = () => {
 
       // 3. TTS via proxy Metro
       setStatus('speaking');
-      const ttsRes = await fetch(`${PROXY}/tts`, {
+      const ttsRes = await fetch(`${PROXY}/api/tts`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ text: reply, voice: 'nova' }),
