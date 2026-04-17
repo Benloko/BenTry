@@ -213,67 +213,77 @@ const VocalTab = () => {
   const isProcessing = status === 'processing';
   const isSpeaking = status === 'speaking';
 
+  const scrollRef = useRef(null);
+
   return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 24 }}>
+    <View style={{ flex: 1, paddingHorizontal: 16 }}>
       {/* Historique */}
-      {history.length > 0 && (
-        <ScrollView style={{ width: '100%', maxHeight: 280, marginBottom: 20 }} showsVerticalScrollIndicator={false}>
-          {history.map((h, i) => (
-            <View key={i} style={{
-              alignSelf: h.role === 'user' ? 'flex-end' : 'flex-start',
-              backgroundColor: h.role === 'user' ? '#a855f733' : '#ffffff10',
-              borderRadius: 16, padding: 10, paddingHorizontal: 14, marginBottom: 8, maxWidth: '85%',
-              borderWidth: 1, borderColor: h.role === 'user' ? '#a855f755' : '#ffffff20',
-            }}>
-              <Text style={{ color: '#eee', fontSize: 14, lineHeight: 20 }}>{h.content}</Text>
-            </View>
-          ))}
-        </ScrollView>
-      )}
+      <View style={{ flex: 1, marginBottom: 8 }}>
+        {history.length === 0 ? (
+          <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+            <Text style={{ fontSize: 48, marginBottom: 12 }}>🎙️</Text>
+            <Text style={{ color: '#ffffff40', fontSize: 16, textAlign: 'center' }}>Appuie pour parler à l'IA</Text>
+          </View>
+        ) : (
+          <ScrollView ref={scrollRef} showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingVertical: 12 }}
+            onContentSizeChange={() => scrollRef.current?.scrollToEnd({ animated: true })}>
+            {history.map((h, i) => (
+              <View key={i} style={{
+                alignSelf: h.role === 'user' ? 'flex-end' : 'flex-start',
+                backgroundColor: h.role === 'user' ? '#a855f733' : '#ffffff10',
+                borderRadius: 16, padding: 10, paddingHorizontal: 14, marginBottom: 8, maxWidth: '85%',
+                borderWidth: 1, borderColor: h.role === 'user' ? '#a855f755' : '#ffffff20',
+              }}>
+                <Text style={{ color: '#eee', fontSize: 14, lineHeight: 20 }}>{h.content}</Text>
+              </View>
+            ))}
+          </ScrollView>
+        )}
+      </View>
 
-      {/* Status text */}
-      <Text style={{ color: '#ffffff60', fontSize: 14, marginBottom: isRecording ? 8 : 24, textAlign: 'center', fontStyle: 'italic' }}>
-        {status === 'idle' && (history.length === 0 ? 'Appuie pour parler à l\'IA 🎙️' : 'Continue la conversation...')}
-        {status === 'recording' && '🔴 Enregistrement... Parle maintenant'}
-        {status === 'processing' && '⚙️ Traitement en cours...'}
-        {status === 'speaking' && '🔊 L\'IA répond...'}
-      </Text>
-
-      {isRecording && (
-        <Text style={{ color: '#e05555', fontSize: 32, fontWeight: '700', marginBottom: 16, letterSpacing: 2 }}>
-          {String(Math.floor(seconds / 60)).padStart(2, '0')}:{String(seconds % 60).padStart(2, '0')}
+      {/* Bas : status + bouton micro */}
+      <View style={{ alignItems: 'center', paddingBottom: Platform.OS === 'ios' ? 30 : 16 }}>
+        <Text style={{ color: '#ffffff60', fontSize: 14, marginBottom: isRecording ? 6 : 16, textAlign: 'center', fontStyle: 'italic' }}>
+          {status === 'idle' && (history.length === 0 ? '' : 'Continue la conversation...')}
+          {status === 'recording' && '🔴 Enregistrement... Parle maintenant'}
+          {status === 'processing' && '⚙️ Traitement en cours...'}
+          {status === 'speaking' && '🔊 L\'IA répond...'}
         </Text>
-      )}
 
-      {/* Bouton micro */}
-      <TouchableOpacity
-        onPress={isRecording ? stopAndProcess : startRecording}
-        disabled={isProcessing || isSpeaking}
-        style={{
-          width: 90, height: 90, borderRadius: 45,
-          backgroundColor: isRecording ? '#e05555' : isProcessing || isSpeaking ? '#ffffff20' : '#a855f7',
-          justifyContent: 'center', alignItems: 'center',
-          boxShadow: isRecording ? '0 0 20px #e05555' : '0 0 20px #a855f7', elevation: 10,
-          borderWidth: 3,
-          borderColor: isRecording ? '#ff8888' : '#a855f755',
-        }}
-      >
-        {isProcessing || isSpeaking
-          ? <ActivityIndicator size="large" color="#fff" />
-          : <Text style={{ fontSize: 36 }}>{isRecording ? '⏹️' : '🎙️'}</Text>
-        }
-      </TouchableOpacity>
+        {isRecording && (
+          <Text style={{ color: '#e05555', fontSize: 32, fontWeight: '700', marginBottom: 12, letterSpacing: 2 }}>
+            {String(Math.floor(seconds / 60)).padStart(2, '0')}:{String(seconds % 60).padStart(2, '0')}
+          </Text>
+        )}
 
-      {isRecording && (
-        <Text style={{ color: '#e05555', marginTop: 12, fontSize: 13 }}>Appuie pour arrêter</Text>
-      )}
-
-      {/* Réinitialiser */}
-      {history.length > 0 && status === 'idle' && (
-        <TouchableOpacity onPress={() => setHistory([])} style={{ marginTop: 20 }}>
-          <Text style={{ color: '#ffffff40', fontSize: 13 }}>🗑️ Nouvelle conversation</Text>
+        <TouchableOpacity
+          onPress={isRecording ? stopAndProcess : startRecording}
+          disabled={isProcessing || isSpeaking}
+          style={{
+            width: 90, height: 90, borderRadius: 45,
+            backgroundColor: isRecording ? '#e05555' : isProcessing || isSpeaking ? '#ffffff20' : '#a855f7',
+            justifyContent: 'center', alignItems: 'center',
+            boxShadow: isRecording ? '0 0 20px #e05555' : '0 0 20px #a855f7', elevation: 10,
+            borderWidth: 3, borderColor: isRecording ? '#ff8888' : '#a855f755',
+          }}
+        >
+          {isProcessing || isSpeaking
+            ? <ActivityIndicator size="large" color="#fff" />
+            : <Text style={{ fontSize: 36 }}>{isRecording ? '⏹️' : '🎙️'}</Text>
+          }
         </TouchableOpacity>
-      )}
+
+        {isRecording && (
+          <Text style={{ color: '#e05555', marginTop: 10, fontSize: 13 }}>Appuie pour arrêter</Text>
+        )}
+
+        {history.length > 0 && status === 'idle' && (
+          <TouchableOpacity onPress={() => setHistory([])} style={{ marginTop: 14 }}>
+            <Text style={{ color: '#ffffff40', fontSize: 13 }}>🗑️ Nouvelle conversation</Text>
+          </TouchableOpacity>
+        )}
+      </View>
     </View>
   );
 };
