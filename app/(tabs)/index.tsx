@@ -12,6 +12,8 @@ import { Pacifico_400Regular } from '@expo-google-fonts/pacifico';
 const API_KEY = 'sk-afri-13e1185b7e9d4409b4383864bbb15cdd'; // v2
 const BASE = 'https://build.lewisnote.com';
 const PROXY = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8081';
+const isVercel = typeof window !== 'undefined' && window.location.hostname !== 'localhost';
+const apiUrl = (path) => isVercel ? `${PROXY}/api/proxy?path=${encodeURIComponent(path)}` : `${BASE}/${path}`;
 
 const TABS = [
   { key: 'discu', icon: '💬', color: '#4f8ef7' },
@@ -271,10 +273,10 @@ export default function App() {
     updateLastMsg({ result: 'Ta vidéo est en cours de création...', url: null, status: 'waiting' });
     for (let i = 0; i < 40; i++) {
       await new Promise(r => setTimeout(r, 5000));
-      const pollRes = await fetch(`${BASE}/v1/videos/${videoId}`, { headers: { 'Authorization': `Bearer ${API_KEY}` } });
+      const pollRes = await fetch(apiUrl(`v1/videos/${videoId}`), { headers: { 'Authorization': `Bearer ${API_KEY}` } });
       const pollData = await pollRes.json();
       if (pollData.status === 'completed') {
-        const contentRes = await fetch(`${BASE}/v1/videos/${videoId}/content`, { headers: { 'Authorization': `Bearer ${API_KEY}` } });
+        const contentRes = await fetch(apiUrl(`v1/videos/${videoId}/content`), { headers: { 'Authorization': `Bearer ${API_KEY}` } });
         const contentData = await contentRes.json();
         updateLastMsg(contentData.url
           ? { result: 'Vidéo prête !', url: contentData.url, status: 'done' }
@@ -303,7 +305,7 @@ export default function App() {
 
     try {
       if (tab === 'discu') {
-        const res = await fetch(`${BASE}/v1/chat/completions`, {
+        const res = await fetch(apiUrl('v1/chat/completions'), {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ model: 'gpt-5.4', messages: [...msgList.filter(m => m.type === 'discu').map(m => ({ role: 'user', content: m.prompt })), { role: 'user', content: prompt }] }),
@@ -312,7 +314,7 @@ export default function App() {
         updateLastMsg({ result: data.choices?.[0]?.message?.content?.trim() || 'Aucune réponse reçue. Réessaie.', status: 'done' });
 
       } else if (tab === 'image') {
-        const res = await fetch(`${BASE}/v1/images/generations`, {
+        const res = await fetch(apiUrl('v1/images/generations'), {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify({ model: 'gpt-image-1.5', prompt, size: '1024x1024', quality: 'low' }),
@@ -324,7 +326,7 @@ export default function App() {
       } else if (tab === 'video') {
         videoGenerating.current = true;
         const bodyObject = { prompt, seconds: videoSeconds };
-        const res = await fetch(`${BASE}/v1/videos/generations`, {
+        const res = await fetch(apiUrl('v1/videos/generations'), {
           method: 'POST',
           headers: { 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
           body: JSON.stringify(bodyObject),
@@ -340,7 +342,7 @@ export default function App() {
             for (let i = 1; i <= 6; i++) {
               updateLastMsg({ result: `Le serveur est occupé, nouvelle tentative dans 30s... (${i}/6)`, url: null, status: 'waiting' });
               await new Promise(r => setTimeout(r, 30000));
-              const retryRes = await fetch(`${BASE}/v1/videos/generations`, {
+              const retryRes = await fetch(apiUrl('v1/videos/generations'), {
                 method: 'POST',
                 headers: { 'Authorization': `Bearer ${API_KEY}`, 'Content-Type': 'application/json' },
                 body: JSON.stringify(bodyObject),
