@@ -32,10 +32,36 @@ const Background = () => (
   </View>
 );
 
-const ImageCard = ({ url }) => (
-  url ? <Image source={{ uri: url }} style={{ width: 220, height: 220, borderRadius: 18, borderWidth: 1, borderColor: '#ffffff20', marginTop: 10, alignSelf: 'flex-start' }} />
-  : null
-);
+const ImageCard = ({ url }) => {
+  if (!url) return null;
+  const download = async () => {
+    if (Platform.OS === 'web') {
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'bentry-image.png';
+      a.target = '_blank';
+      a.click();
+    } else {
+      const { status } = await MediaLibrary.requestPermissionsAsync();
+      if (status !== 'granted') { Alert.alert('Permission refusée'); return; }
+      const file = await FileSystem.downloadAsync(url, FileSystem.documentDirectory + 'bentry-image.png');
+      await MediaLibrary.saveToLibraryAsync(file.uri);
+      Alert.alert('✅ Image sauvegardée dans la galerie');
+    }
+  };
+  return (
+    <View style={{ marginTop: 10, alignSelf: 'flex-start' }}>
+      <Image source={{ uri: url }} style={{ width: 220, height: 220, borderRadius: 18, borderWidth: 1, borderColor: '#ffffff20' }} />
+      <TouchableOpacity onPress={download} style={{
+        position: 'absolute', bottom: 8, right: 8,
+        backgroundColor: '#000000aa', borderRadius: 20, width: 34, height: 34,
+        justifyContent: 'center', alignItems: 'center',
+      }}>
+        <Text style={{ fontSize: 16 }}>⬇️</Text>
+      </TouchableOpacity>
+    </View>
+  );
+};
 
 const VideoCard = ({ url }) => {
   const [videoUri, setVideoUri] = React.useState(null);
