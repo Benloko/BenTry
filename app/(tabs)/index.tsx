@@ -9,7 +9,7 @@ import * as MediaLibrary from 'expo-media-library';
 import { useFonts, DancingScript_700Bold } from '@expo-google-fonts/dancing-script';
 import { Pacifico_400Regular } from '@expo-google-fonts/pacifico';
 
-const API_KEY = 'sk-afri-13e1185b7e9d4409b4383864bbb15cdd';
+const API_KEY = 'sk-afri-13e1185b7e9d4409b4383864bbb15cdd'; // v2
 const BASE = 'https://build.lewisnote.com';
 const PROXY = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:8081';
 
