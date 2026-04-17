@@ -15,10 +15,11 @@ function httpsRequest(options, payload) {
   });
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', '*');
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
+  if (req.method !== 'POST') { res.status(405).end(); return; }
 
   try {
     const { text, voice } = req.body;
@@ -33,4 +34,4 @@ export default async function handler(req, res) {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
-}
+};

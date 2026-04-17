@@ -41,10 +41,11 @@ function uploadToTmpfiles(audioBuffer, contentType, ext) {
   });
 }
 
-export default async function handler(req, res) {
+module.exports = async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Headers', '*');
   if (req.method === 'OPTIONS') { res.status(200).end(); return; }
+  if (req.method !== 'POST') { res.status(405).end(); return; }
 
   const chunks = [];
   await new Promise(resolve => {
@@ -68,6 +69,6 @@ export default async function handler(req, res) {
   } catch (e) {
     res.status(500).json({ error: e.message });
   }
-}
+};
 
-export const config = { api: { bodyParser: false } };
+module.exports.config = { api: { bodyParser: false } };
